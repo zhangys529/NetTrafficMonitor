@@ -1,0 +1,22 @@
+del /s /A:H *.suo
+del /s *.ncb
+del /s *.obj
+del /s *.pdb
+del /s *.pch
+del /s *.exp
+del /s *.plg
+del /s *.dep
+del /s *.ilk
+del /s *.idb
+del /s *.sdf
+del /s *.ipch
+del /s *.exe
+del /s *.tlog
+del /s *.log
+del /s *.lastbuildstate
+del /s *.user
+rd  /s/q ipch
+rd  /s/q debug
+rd  /s/q release
+rd  /s/q NetTrafficMonitor\debug
+rd  /s/q NetTrafficMonitor\release
