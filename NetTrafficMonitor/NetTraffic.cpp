@@ -7,11 +7,11 @@ CNetTraffic* CNetTraffic::m_pInstance = NULL;
 CNetTraffic::CNetTraffic()
 {
 	m_listInterfaces.RemoveAll();
-	m_listBandwidths.RemoveAll();
-	m_listIncrementalIncomingTraffic.RemoveAll();
-	m_listIncrementalOutgoingTraffic.RemoveAll();
-	m_listTotalIncomingTraffics.RemoveAll();
-	m_listTotalOutgoingTraffics.RemoveAll();
+	m_mapBandwidths.clear();
+	m_mapIncrementalIncomingTraffic.clear();
+	m_mapIncrementalOutgoingTraffic.clear();
+	m_mapTotalIncomingTraffics.clear();
+	m_mapTotalOutgoingTraffics.clear();
 }
 
 
@@ -23,9 +23,9 @@ BOOL CNetTraffic::RefreshInterfacesTraffic()
 {
 	try
 	{
-		PERF_DATA_BLOCK* pDataBlock = GetDataBlock("510");			// 得到数据块
+		PERF_DATA_BLOCK* pDataBlock = GetDataBlock(_T("510"));			// 得到数据块
 		PERF_OBJECT_TYPE* pObjectType = FirstObject(pDataBlock);	// 得到第一个对象
-		int a = 0;
+		DWORD a = 0;
 		for (; a < pDataBlock->NumObjectTypes; ++a)
 		{
 			if (pObjectType->ObjectNameTitleIndex == 510)			// 判断是否是网络对象(索引是510)
@@ -41,10 +41,10 @@ BOOL CNetTraffic::RefreshInterfacesTraffic()
 		}
 		PERF_INSTANCE_DEFINITION* pInstance = FirstInstance(pObjectType);
 		char szNameBuffer[255];
-		for (int b = 0; b < pObjectType->NumInstances; ++b)
+		for (LONG b = 0; b < pObjectType->NumInstances; ++b)
 		{
 			wchar_t* pSrcName = (wchar_t*)((BYTE*)pInstance + pInstance->NameOffset);
-			char* pName = WideToMulti(pSrcName, szNameBuffer, sizeof(szNameBuffer));
+			CString strName = WideToMulti(pSrcName, szNameBuffer, sizeof(szNameBuffer));
 			PERF_COUNTER_BLOCK* pCounterBlock = GetCounterBlock(pInstance);
 			// 带宽
 			DWORD ulBandwithOffset = GetCounterOffset(pObjectType, ETrafficType::Bandwidth);
@@ -55,28 +55,26 @@ BOOL CNetTraffic::RefreshInterfacesTraffic()
 			// 输出流量
 			DWORD ulOutgoingTrafficOffset = GetCounterOffset(pObjectType, ETrafficType::OutgoingTraffic);
 			DWORD ulOutgoingTraffic = *((DWORD*)((BYTE*)pCounterBlock + ulOutgoingTrafficOffset));
+			// 增量流量
+			DWORD ulIncrementalIncomingTraffic = 0;
+			DWORD ulIncrementalOutgoingTraffic = 0;
 
 			// 通过接口名找缓存数据, 如果找不到则新增, 能找到则计算其增量数据
-			POSITION pos = m_listInterfaces.Find(pName);
+			POSITION pos = m_listInterfaces.Find(strName);
 			if (NULL == pos)
 			{
-				m_listInterfaces.AddTail(CString(pName));
-				m_listBandwidths.AddTail(ulBandwith);
-				m_listIncrementalIncomingTraffic.AddTail(0);
-				m_listIncrementalOutgoingTraffic.AddTail(0);
-				m_listTotalIncomingTraffics.AddTail(ulIncomingTraffic);
-				m_listTotalOutgoingTraffics.AddTail(ulOutgoingTraffic);
+				m_listInterfaces.AddTail(strName);
 			}
 			else
 			{
-				DWORD ulIncrementalIncomingTraffic = ulIncomingTraffic - m_listTotalIncomingTraffics.GetAt(pos);
-				DWORD ulIncrementalOutgoingTraffic = ulOutgoingTraffic - m_listTotalOutgoingTraffics.GetAt(pos);
-				m_listBandwidths.SetAt(pos, ulBandwith);
-				m_listIncrementalIncomingTraffic.SetAt(pos, ulIncrementalIncomingTraffic);
-				m_listIncrementalOutgoingTraffic.SetAt(pos, ulIncrementalOutgoingTraffic);
-				m_listTotalIncomingTraffics.AddTail(ulIncomingTraffic);
-				m_listTotalOutgoingTraffics.AddTail(ulOutgoingTraffic);
+				ulIncrementalIncomingTraffic = ulIncomingTraffic - m_mapTotalIncomingTraffics[strName];
+				ulIncrementalOutgoingTraffic = ulOutgoingTraffic - m_mapTotalOutgoingTraffics[strName];
 			}
+			m_mapBandwidths[strName] = ulBandwith;
+			m_mapIncrementalIncomingTraffic[strName] = ulIncrementalIncomingTraffic;
+			m_mapIncrementalOutgoingTraffic[strName] = ulIncrementalOutgoingTraffic;
+			m_mapTotalIncomingTraffics[strName] = ulIncomingTraffic;
+			m_mapTotalOutgoingTraffics[strName] = ulOutgoingTraffic;
 
 			pInstance = NextInstance(pInstance);
 		}
@@ -97,54 +95,54 @@ CString CNetTraffic::GetNetworkInterfaceName(int iIndex)
 	POSITION pos = m_listInterfaces.FindIndex(iIndex);
 	if (NULL == pos)
 	{
-		return FALSE;
+		return _T("");
 	}
 	return m_listInterfaces.GetAt(pos);
 }
 DWORD CNetTraffic::GetBandwidth(int iIndex)
 {
-	POSITION pos = m_listBandwidths.FindIndex(iIndex);
-	if (NULL == pos)
+	CString strName = GetNetworkInterfaceName(iIndex);
+	if ("" == strName)
 	{
 		return 0;
 	}
-	return m_listBandwidths.GetAt(pos);
+	return m_mapBandwidths[strName];
 }
 DWORD CNetTraffic::GetIncrementalIncomingTraffic(int iIndex)
 {
-	POSITION pos = m_listIncrementalIncomingTraffic.FindIndex(iIndex);
-	if (NULL == pos)
+	CString strName = GetNetworkInterfaceName(iIndex);
+	if ("" == strName)
 	{
 		return 0;
 	}
-	return m_listIncrementalIncomingTraffic.GetAt(pos);
+	return m_mapIncrementalIncomingTraffic[strName];
 }
 DWORD CNetTraffic::GetIncrementalOutgoingTraffic(int iIndex)
 {
-	POSITION pos = m_listIncrementalOutgoingTraffic.FindIndex(iIndex);
-	if (NULL == pos)
+	CString strName = GetNetworkInterfaceName(iIndex);
+	if ("" == strName)
 	{
 		return 0;
 	}
-	return m_listIncrementalOutgoingTraffic.GetAt(pos);
+	return m_mapIncrementalOutgoingTraffic[strName];
 }
 DWORD CNetTraffic::GetTotalIncomingTraffic(int iIndex)
 {
-	POSITION pos = m_listTotalIncomingTraffics.FindIndex(iIndex);
-	if (NULL == pos)
+	CString strName = GetNetworkInterfaceName(iIndex);
+	if ("" == strName)
 	{
 		return 0;
 	}
-	return m_listTotalIncomingTraffics.GetAt(pos);
+	return m_mapTotalIncomingTraffics[strName];
 }
 DWORD CNetTraffic::GetTotalOutgoingTraffic(int iIndex)
 {
-	POSITION pos = m_listTotalOutgoingTraffics.FindIndex(iIndex);
-	if (NULL == pos)
+	CString strName = GetNetworkInterfaceName(iIndex);
+	if ("" == strName)
 	{
 		return 0;
 	}
-	return m_listTotalOutgoingTraffics.GetAt(pos);
+	return m_mapTotalOutgoingTraffics[strName];
 }
 
 CNetTraffic* CNetTraffic::create_instance()

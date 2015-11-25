@@ -1,4 +1,7 @@
 #pragma once
+#include <map>
+using namespace std;
+
 class CNetTraffic
 {
 private:
@@ -24,11 +27,11 @@ public:
 	static CNetTraffic* create_instance();
 private:
 	CStringList m_listInterfaces;
-	CList<DWORD, DWORD&> m_listBandwidths;					// 带宽
-	CList<DWORD, DWORD&> m_listIncrementalIncomingTraffic;	// 增量输入流量
-	CList<DWORD, DWORD&> m_listIncrementalOutgoingTraffic;	// 增量输出流量
-	CList<DWORD, DWORD&> m_listTotalIncomingTraffics;		// 总输入流量
-	CList<DWORD, DWORD&> m_listTotalOutgoingTraffics;		// 总输出流量
+	map<CString, DWORD> m_mapBandwidths;					// 带宽
+	map<CString, DWORD> m_mapIncrementalIncomingTraffic;	// 增量输入流量
+	map<CString, DWORD> m_mapIncrementalOutgoingTraffic;	// 增量输出流量
+	map<CString, DWORD> m_mapTotalIncomingTraffics;		// 总输入流量
+	map<CString, DWORD> m_mapTotalOutgoingTraffics;		// 总输出流量
 
 	static CNetTraffic* m_pInstance;
 };

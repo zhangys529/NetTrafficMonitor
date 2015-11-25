@@ -27,8 +27,10 @@ protected:
 	afx_msg void OnExit();
 
 private:
-	CStatic m_cTextUpload;
-	CStatic m_cTextDownload;
+	LONG m_llWidth;
+	LONG m_llHeight;
+	DWORD m_ulUploadTraffic;
+	DWORD m_ulDownloadTraffic;
 };
 
 

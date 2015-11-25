@@ -3,7 +3,7 @@
 #include <winperf.h>
 
 #define DEFAULT_BUFFER_SIZE 40960L
-PERF_DATA_BLOCK* GetDataBlock(LPCSTR lpValueName)
+PERF_DATA_BLOCK* GetDataBlock(LPCWSTR lpValueName)
 {
 	DWORD ret;	// RegQueryValueEx返回的值
 	DWORD type;	// 从RegQueryValueEx返回的值:本例中忽略该变量
@@ -54,15 +54,15 @@ PERF_INSTANCE_DEFINITION* NextInstance(PERF_INSTANCE_DEFINITION* pInstance)
 	PERF_COUNTER_BLOCK* pCtrBlk = GetCounterBlock(pInstance);
 	return (PERF_INSTANCE_DEFINITION*)((BYTE*)pInstance + pInstance->ByteLength + pCtrBlk->ByteLength);
 }
-char* WideToMulti(wchar_t* source, char* dest, int size)
+CString WideToMulti(wchar_t* source, char* dest, int size)
 {
 	WideCharToMultiByte(CP_ACP, 0, source, -1, dest, size, 0, 0);
-	return dest;
+	return CString(dest);
 }
 DWORD GetCounterOffset(PERF_OBJECT_TYPE* pObjectType, int type)
 {
 	PERF_COUNTER_DEFINITION* pCounter = FirstCounter(pObjectType);	// 找到第一个计数器
-	for (int b = 0; b < pObjectType->NumCounters; ++b)
+	for (DWORD b = 0; b < pObjectType->NumCounters; ++b)
 	{
 		if (pCounter->CounterNameTitleIndex == type)
 		{
