@@ -123,6 +123,11 @@
     <None Include="res\NetTrafficMonitor.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\bitmap1.bmp" />
+    <Image Include="res\check.bmp" />
+    <Image Include="res\check1.bmp" />
+    <Image Include="res\check2.bmp" />
+    <Image Include="res\exit.bmp" />
     <Image Include="res\NetTrafficMonitor.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

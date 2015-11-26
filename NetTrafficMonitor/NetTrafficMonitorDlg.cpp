@@ -17,6 +17,7 @@ CNetTrafficMonitorDlg::CNetTrafficMonitorDlg()
 	m_llHeight = 30;
 	m_ulUploadTraffic = 0;
 	m_ulDownloadTraffic = 0;
+	m_bSelfStarting = FALSE;
 }
 
 CNetTrafficMonitorDlg::~CNetTrafficMonitorDlg()
@@ -34,6 +35,7 @@ BEGIN_MESSAGE_MAP(CNetTrafficMonitorDlg, CWnd)
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_RBUTTONUP()
 	ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_SELFSTARTING, OnSelfStarting)
 	ON_BN_CLICKED(IDC_EXIT, OnExit)
 END_MESSAGE_MAP()
 
@@ -81,6 +83,31 @@ int CNetTrafficMonitorDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	SetTimer(1, 1000, NULL);										// 间隔1秒刷新
 	ShowWindow(SW_SHOW);
 
+	HKEY hKey;
+	LPCTSTR lpRun = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");		// 找到系统的启动项
+	LSTATUS lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpRun, 0, KEY_READ, &hKey);	// 打开启动项Key
+	if (ERROR_SUCCESS != lRet)
+	{
+		return 0;
+	}
+	TCHAR szFileFullPath[MAX_PATH] = { 0 };
+	TCHAR szFileName[_MAX_FNAME] = { 0 };
+	GetModuleFileName(NULL, szFileFullPath, sizeof(szFileFullPath));			// 得到程序自身的全路径
+	_wsplitpath(szFileFullPath, NULL, NULL, szFileName, NULL);					// 获得程序名
+	DWORD ulType = REG_SZ;
+	DWORD ulSize;
+	TCHAR szValue[MAX_PATH] = { 0 };
+	lRet = RegQueryValueEx(hKey, szFileName, NULL, &ulType, (LPBYTE)szValue,&ulSize);
+	RegCloseKey(hKey);															// 关闭注册表
+	if (ERROR_SUCCESS == lRet && wcscmp(szValue, szFileFullPath) == 0)
+	{
+		m_bSelfStarting = TRUE;
+	}
+	else
+	{
+		m_bSelfStarting = FALSE;
+	}
+
 	return 0;
 }
 
@@ -120,6 +147,10 @@ void CNetTrafficMonitorDlg::OnPaint()
 	dc.DrawText(strText, CRect(0, 0, m_llWidth, m_llHeight / 2), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
 	strText.Format(_T(" ↓ %.2f KB/s"), m_ulDownloadTraffic / 1024.00);
 	dc.DrawText(strText, CRect(0, m_llHeight / 2, m_llWidth, m_llHeight), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+
+	m_cCheckNo.LoadBitmap(IDB_CHECKNO);
+	m_cCheckYes.LoadBitmap(IDB_CHECKYES);
+	m_cExit.LoadBitmap(IDB_EXIT);
 }
 
 
@@ -164,10 +195,21 @@ void CNetTrafficMonitorDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 	LPPOINT lpPoint = new tagPOINT();
 	GetCursorPos(lpPoint);
+
 	CMenu menu;
 	menu.CreatePopupMenu();	// 声明一个弹出式菜单
+	menu.AppendMenu(MF_STRING, IDC_SELFSTARTING, _T("开机启动"));
 	menu.AppendMenu(MF_STRING, IDC_EXIT, _T("退出"));	// 增加菜单项“退出”，点击则发送消息给主窗口将程序结束
-	SetForegroundWindow();
+	if (m_bSelfStarting)
+	{
+		menu.SetMenuItemBitmaps(0, MF_BYPOSITION | MF_STRING | MF_ENABLED, &m_cCheckYes, &m_cCheckYes);
+	}
+	else
+	{
+		menu.SetMenuItemBitmaps(0, MF_BYPOSITION | MF_STRING | MF_ENABLED, &m_cCheckNo, &m_cCheckNo);
+	}
+	menu.SetMenuItemBitmaps(1, MF_BYPOSITION | MF_STRING | MF_ENABLED, &m_cExit, &m_cExit);
+	//SetForegroundWindow();
 	menu.TrackPopupMenu(TPM_LEFTALIGN, lpPoint->x, lpPoint->y, this);	// 确定弹出式菜单的位置
 	menu.Detach();	// 资源回收
 	menu.DestroyMenu();
@@ -198,6 +240,35 @@ void CNetTrafficMonitorDlg::OnTimer(UINT_PTR nIDEvent)
 	Invalidate();
 
 	CWnd::OnTimer(nIDEvent);
+}
+
+
+void CNetTrafficMonitorDlg::OnSelfStarting()
+{
+	HKEY hKey;
+	LPCTSTR lpRun = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");		// 找到系统的启动项
+	LSTATUS lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpRun, 0, KEY_WRITE, &hKey);	// 打开启动项Key
+	if (ERROR_SUCCESS != lRet)
+	{
+		return;
+	}
+	TCHAR szFileFullPath[MAX_PATH] = { 0 };
+	TCHAR szFileName[_MAX_FNAME] = { 0 };
+	GetModuleFileName(NULL, szFileFullPath, sizeof(szFileFullPath));			// 得到程序自身的全路径
+	_wsplitpath(szFileFullPath, NULL, NULL, szFileName, NULL);					// 获得程序名
+	if (m_bSelfStarting)
+	{
+		lRet = RegDeleteKey(hKey, szFileName);											// 删除一个子Key
+	}
+	else
+	{
+		lRet = RegSetValueEx(hKey, szFileName, 0, REG_SZ, (BYTE*)szFileFullPath, sizeof(szFileFullPath));// 添加一个子Key,并设置值
+	}
+	RegCloseKey(hKey);																	// 关闭注册表
+	if (ERROR_SUCCESS == lRet)
+	{
+		m_bSelfStarting = !m_bSelfStarting;
+	}
 }
 
 

@@ -24,13 +24,21 @@ protected:
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnSelfStarting();
 	afx_msg void OnExit();
 
 private:
 	LONG m_llWidth;
 	LONG m_llHeight;
+
 	DWORD m_ulUploadTraffic;
 	DWORD m_ulDownloadTraffic;
+
+	BOOL m_bSelfStarting;
+
+	CBitmap m_cCheckNo;
+	CBitmap m_cCheckYes;
+	CBitmap m_cExit;
 };
 
 

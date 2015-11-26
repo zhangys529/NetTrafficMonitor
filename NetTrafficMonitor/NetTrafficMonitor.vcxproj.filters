@@ -68,5 +68,20 @@
     <Image Include="res\NetTrafficMonitor.ico">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="res\check.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\bitmap1.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\exit.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\check1.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\check2.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>
