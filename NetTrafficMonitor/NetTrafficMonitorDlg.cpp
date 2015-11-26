@@ -15,8 +15,8 @@ CNetTrafficMonitorDlg::CNetTrafficMonitorDlg()
 {
 	m_llWidth = 70;
 	m_llHeight = 30;
-	m_ulUploadTraffic = 0;
-	m_ulDownloadTraffic = 0;
+	m_dwUploadTraffic = 0;
+	m_dwDownloadTraffic = 0;
 	m_bSelfStarting = FALSE;
 }
 
@@ -83,30 +83,26 @@ int CNetTrafficMonitorDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	SetTimer(1, 1000, NULL);										// 间隔1秒刷新
 	ShowWindow(SW_SHOW);
 
-	HKEY hKey;
-	LPCTSTR lpRun = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");		// 找到系统的启动项
-	LSTATUS lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpRun, 0, KEY_READ, &hKey);	// 打开启动项Key
-	if (ERROR_SUCCESS != lRet)
-	{
-		return 0;
-	}
 	TCHAR szFileFullPath[MAX_PATH] = { 0 };
 	TCHAR szFileName[_MAX_FNAME] = { 0 };
-	GetModuleFileName(NULL, szFileFullPath, sizeof(szFileFullPath));			// 得到程序自身的全路径
+	GetModuleFileName(NULL, szFileFullPath, MAX_PATH);							// 得到程序自身的全路径
 	_wsplitpath(szFileFullPath, NULL, NULL, szFileName, NULL);					// 获得程序名
-	DWORD ulType = REG_SZ;
-	DWORD ulSize;
-	TCHAR szValue[MAX_PATH] = { 0 };
-	lRet = RegQueryValueEx(hKey, szFileName, NULL, &ulType, (LPBYTE)szValue,&ulSize);
-	RegCloseKey(hKey);															// 关闭注册表
-	if (ERROR_SUCCESS == lRet && wcscmp(szValue, szFileFullPath) == 0)
+	HKEY hKey;
+	LPCTSTR lpRun = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");	// 找到系统的启动项
+	if (ERROR_SUCCESS == RegOpenKey(HKEY_CURRENT_USER, lpRun, &hKey))			// 打开启动项Key
 	{
-		m_bSelfStarting = TRUE;
+		DWORD dwType = REG_SZ, dwSize = MAX_PATH;
+		TCHAR szValue[MAX_PATH] = { 0 };
+		if (ERROR_SUCCESS == RegQueryValueEx(hKey, szFileName, NULL, &dwType, (LPBYTE)szValue, &dwSize))
+		{
+			m_bSelfStarting = TRUE;
+		}
+		else
+		{
+			m_bSelfStarting = FALSE;
+		}
 	}
-	else
-	{
-		m_bSelfStarting = FALSE;
-	}
+	RegCloseKey(hKey);											// 关闭注册表
 
 	return 0;
 }
@@ -143,9 +139,9 @@ void CNetTrafficMonitorDlg::OnPaint()
 	dc.SetBkMode(TRANSPARENT);
 
 	CString strText;
-	strText.Format(_T(" ↑ %.2f KB/s"), m_ulUploadTraffic / 1024.00);
+	strText.Format(_T(" ↑ %.2f KB/s"), m_dwUploadTraffic / 1024.00);
 	dc.DrawText(strText, CRect(0, 0, m_llWidth, m_llHeight / 2), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
-	strText.Format(_T(" ↓ %.2f KB/s"), m_ulDownloadTraffic / 1024.00);
+	strText.Format(_T(" ↓ %.2f KB/s"), m_dwDownloadTraffic / 1024.00);
 	dc.DrawText(strText, CRect(0, m_llHeight / 2, m_llWidth, m_llHeight), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
 
 	m_cCheckNo.LoadBitmap(IDB_CHECKNO);
@@ -225,16 +221,16 @@ void CNetTrafficMonitorDlg::OnTimer(UINT_PTR nIDEvent)
 	CNetTraffic* pNetTraffic = CNetTraffic::create_instance();
 	pNetTraffic->RefreshInterfacesTraffic();
 	
-	m_ulUploadTraffic = 0;
-	m_ulDownloadTraffic = 0;
+	m_dwUploadTraffic = 0;
+	m_dwDownloadTraffic = 0;
 	int iNetworkInterfacesCount = pNetTraffic->GetNetworkInterfacesCount();
 	for (int i = 0; i < iNetworkInterfacesCount; ++i)
 	{
-		m_ulUploadTraffic += pNetTraffic->GetIncrementalOutgoingTraffic(i);
+		m_dwUploadTraffic += pNetTraffic->GetIncrementalOutgoingTraffic(i);
 	}
 	for (int i = 0; i < iNetworkInterfacesCount; ++i)
 	{
-		m_ulDownloadTraffic += pNetTraffic->GetIncrementalIncomingTraffic(i);
+		m_dwDownloadTraffic += pNetTraffic->GetIncrementalIncomingTraffic(i);
 	}
 
 	Invalidate();
@@ -245,30 +241,35 @@ void CNetTrafficMonitorDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CNetTrafficMonitorDlg::OnSelfStarting()
 {
-	HKEY hKey;
-	LPCTSTR lpRun = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");		// 找到系统的启动项
-	LSTATUS lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpRun, 0, KEY_WRITE, &hKey);	// 打开启动项Key
-	if (ERROR_SUCCESS != lRet)
-	{
-		return;
-	}
 	TCHAR szFileFullPath[MAX_PATH] = { 0 };
 	TCHAR szFileName[_MAX_FNAME] = { 0 };
-	GetModuleFileName(NULL, szFileFullPath, sizeof(szFileFullPath));			// 得到程序自身的全路径
+	GetModuleFileName(NULL, szFileFullPath, MAX_PATH);							// 得到程序自身的全路径
 	_wsplitpath(szFileFullPath, NULL, NULL, szFileName, NULL);					// 获得程序名
-	if (m_bSelfStarting)
+	HKEY hKey;
+	LPCTSTR lpRun = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");	// 找到系统的启动项
+	if (ERROR_SUCCESS == RegOpenKey(HKEY_CURRENT_USER, lpRun, &hKey))			// 打开启动项Key
 	{
-		lRet = RegDeleteKey(hKey, szFileName);											// 删除一个子Key
+		if (m_bSelfStarting)
+		{
+			if (ERROR_SUCCESS == RegDeleteValue(hKey, szFileName))				// 删除一个子Key
+			{
+				m_bSelfStarting = FALSE;
+			}
+		}
+		else
+		{
+			if (ERROR_SUCCESS == RegSetValueEx(hKey,
+				szFileName,
+				0,
+				REG_SZ,
+				(LPBYTE)szFileFullPath,
+				(lstrlen(szFileFullPath) + 1) * sizeof(TCHAR)))					// 添加一个子Key,并设置值
+			{
+				m_bSelfStarting = TRUE;
+			}
+		}
 	}
-	else
-	{
-		lRet = RegSetValueEx(hKey, szFileName, 0, REG_SZ, (BYTE*)szFileFullPath, sizeof(szFileFullPath));// 添加一个子Key,并设置值
-	}
-	RegCloseKey(hKey);																	// 关闭注册表
-	if (ERROR_SUCCESS == lRet)
-	{
-		m_bSelfStarting = !m_bSelfStarting;
-	}
+	RegCloseKey(hKey);															// 关闭注册表
 }
 
 

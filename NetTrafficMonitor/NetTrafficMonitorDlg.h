@@ -31,8 +31,8 @@ private:
 	LONG m_llWidth;
 	LONG m_llHeight;
 
-	DWORD m_ulUploadTraffic;
-	DWORD m_ulDownloadTraffic;
+	DWORD m_dwUploadTraffic;
+	DWORD m_dwDownloadTraffic;
 
 	BOOL m_bSelfStarting;
 

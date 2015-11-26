@@ -47,17 +47,17 @@ BOOL CNetTraffic::RefreshInterfacesTraffic()
 			CString strName = WideToMulti(pSrcName, szNameBuffer, sizeof(szNameBuffer));
 			PERF_COUNTER_BLOCK* pCounterBlock = GetCounterBlock(pInstance);
 			// 带宽
-			DWORD ulBandwithOffset = GetCounterOffset(pObjectType, ETrafficType::Bandwidth);
-			DWORD ulBandwith = *((DWORD*)((BYTE*)pCounterBlock + ulBandwithOffset));
+			DWORD dwBandwithOffset = GetCounterOffset(pObjectType, ETrafficType::Bandwidth);
+			DWORD dwBandwith = *((DWORD*)((BYTE*)pCounterBlock + dwBandwithOffset));
 			// 输入流量
-			DWORD ulIncomingTrafficOffset = GetCounterOffset(pObjectType, ETrafficType::IncomingTraffic);
-			DWORD ulIncomingTraffic = *((DWORD*)((BYTE*)pCounterBlock + ulIncomingTrafficOffset));
+			DWORD dwIncomingTrafficOffset = GetCounterOffset(pObjectType, ETrafficType::IncomingTraffic);
+			DWORD dwIncomingTraffic = *((DWORD*)((BYTE*)pCounterBlock + dwIncomingTrafficOffset));
 			// 输出流量
-			DWORD ulOutgoingTrafficOffset = GetCounterOffset(pObjectType, ETrafficType::OutgoingTraffic);
-			DWORD ulOutgoingTraffic = *((DWORD*)((BYTE*)pCounterBlock + ulOutgoingTrafficOffset));
+			DWORD dwOutgoingTrafficOffset = GetCounterOffset(pObjectType, ETrafficType::OutgoingTraffic);
+			DWORD dwOutgoingTraffic = *((DWORD*)((BYTE*)pCounterBlock + dwOutgoingTrafficOffset));
 			// 增量流量
-			DWORD ulIncrementalIncomingTraffic = 0;
-			DWORD ulIncrementalOutgoingTraffic = 0;
+			DWORD dwIncrementalIncomingTraffic = 0;
+			DWORD dwIncrementalOutgoingTraffic = 0;
 
 			// 通过接口名找缓存数据, 如果找不到则新增, 能找到则计算其增量数据
 			POSITION pos = m_listInterfaces.Find(strName);
@@ -67,14 +67,14 @@ BOOL CNetTraffic::RefreshInterfacesTraffic()
 			}
 			else
 			{
-				ulIncrementalIncomingTraffic = ulIncomingTraffic - m_mapTotalIncomingTraffics[strName];
-				ulIncrementalOutgoingTraffic = ulOutgoingTraffic - m_mapTotalOutgoingTraffics[strName];
+				dwIncrementalIncomingTraffic = dwIncomingTraffic - m_mapTotalIncomingTraffics[strName];
+				dwIncrementalOutgoingTraffic = dwOutgoingTraffic - m_mapTotalOutgoingTraffics[strName];
 			}
-			m_mapBandwidths[strName] = ulBandwith;
-			m_mapIncrementalIncomingTraffic[strName] = ulIncrementalIncomingTraffic;
-			m_mapIncrementalOutgoingTraffic[strName] = ulIncrementalOutgoingTraffic;
-			m_mapTotalIncomingTraffics[strName] = ulIncomingTraffic;
-			m_mapTotalOutgoingTraffics[strName] = ulOutgoingTraffic;
+			m_mapBandwidths[strName] = dwBandwith;
+			m_mapIncrementalIncomingTraffic[strName] = dwIncrementalIncomingTraffic;
+			m_mapIncrementalOutgoingTraffic[strName] = dwIncrementalOutgoingTraffic;
+			m_mapTotalIncomingTraffics[strName] = dwIncomingTraffic;
+			m_mapTotalOutgoingTraffics[strName] = dwOutgoingTraffic;
 
 			pInstance = NextInstance(pInstance);
 		}
