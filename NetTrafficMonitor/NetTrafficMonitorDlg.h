@@ -28,8 +28,8 @@ protected:
 	afx_msg void OnExit();
 
 private:
-	LONG m_llWidth;
-	LONG m_llHeight;
+	int m_iWidth;
+	int m_iHeight;
 
 	DWORD m_dwUploadTraffic;
 	DWORD m_dwDownloadTraffic;

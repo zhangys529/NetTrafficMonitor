@@ -13,8 +13,8 @@ IMPLEMENT_DYNAMIC(CNetTrafficMonitorDlg, CWnd)
 
 CNetTrafficMonitorDlg::CNetTrafficMonitorDlg()
 {
-	m_llWidth = 70;
-	m_llHeight = 30;
+	m_iWidth = 70;
+	m_iHeight = 30;
 	m_dwUploadTraffic = 0;
 	m_dwDownloadTraffic = 0;
 	m_bSelfStarting = FALSE;
@@ -62,7 +62,7 @@ BOOL CNetTrafficMonitorDlg::PreCreateWindow(CREATESTRUCT& cs)
 	wcex.hInstance = cs.hInstance;
 	wcex.hIcon = wcex.hIconSm = LoadIcon(cs.hInstance, MAKEINTRESOURCE(IDR_MAINFRAME));
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
+	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	wcex.lpszMenuName = NULL;
 	wcex.lpszClassName = cs.lpszClass;
 	return RegisterClassEx(&wcex);
@@ -77,9 +77,16 @@ int CNetTrafficMonitorDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	// TODO:  在此添加您专用的创建代码
+	CRect rcWorkArea;
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &rcWorkArea, 0);		// 获取系统工作区域(除去下方任务栏)
+	MoveWindow(CRect(rcWorkArea.right - m_iWidth - 20, 40, rcWorkArea.right - 20, 40 + m_iHeight));
 	ModifyStyle(WS_THICKFRAME, 0);									// 不可调大小
 	ModifyStyleEx(WS_EX_APPWINDOW, WS_EX_TOOLWINDOW);				// 隐藏任务栏图标
 	SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);	// 置顶
+	SetWindowLong(m_hWnd,
+		GWL_EXSTYLE,
+		GetWindowLong(m_hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);		// 为窗口加入WS_EX_LAYERED扩展属性
+	SetLayeredWindowAttributes(0, (255 * 70) / 100, LWA_ALPHA);		// 70%透明度
 	SetTimer(1, 1000, NULL);										// 间隔1秒刷新
 	ShowWindow(SW_SHOW);
 
@@ -102,7 +109,7 @@ int CNetTrafficMonitorDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 			m_bSelfStarting = FALSE;
 		}
 	}
-	RegCloseKey(hKey);											// 关闭注册表
+	RegCloseKey(hKey);															// 关闭注册表
 
 	return 0;
 }
@@ -140,9 +147,9 @@ void CNetTrafficMonitorDlg::OnPaint()
 
 	CString strText;
 	strText.Format(_T(" ↑ %.2f KB/s"), m_dwUploadTraffic / 1024.00);
-	dc.DrawText(strText, CRect(0, 0, m_llWidth, m_llHeight / 2), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+	dc.DrawText(strText, CRect(0, 0, m_iWidth, m_iHeight / 2), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
 	strText.Format(_T(" ↓ %.2f KB/s"), m_dwDownloadTraffic / 1024.00);
-	dc.DrawText(strText, CRect(0, m_llHeight / 2, m_llWidth, m_llHeight), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+	dc.DrawText(strText, CRect(0, m_iHeight / 2, m_iWidth, m_iHeight), DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
 
 	m_cCheckNo.LoadBitmap(IDB_CHECKNO);
 	m_cCheckYes.LoadBitmap(IDB_CHECKYES);
@@ -161,8 +168,8 @@ void CNetTrafficMonitorDlg::OnSize(UINT nType, int cx, int cy)
 void CNetTrafficMonitorDlg::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
-	lpMMI->ptMinTrackSize.x = lpMMI->ptMaxTrackSize.x = lpMMI->ptMaxSize.x = m_llWidth;
-	lpMMI->ptMinTrackSize.y = lpMMI->ptMaxTrackSize.y = lpMMI->ptMaxSize.y = m_llHeight;
+	lpMMI->ptMinTrackSize.x = lpMMI->ptMaxTrackSize.x = lpMMI->ptMaxSize.x = m_iWidth;
+	lpMMI->ptMinTrackSize.y = lpMMI->ptMaxTrackSize.y = lpMMI->ptMaxSize.y = m_iHeight;
 
 	CWnd::OnGetMinMaxInfo(lpMMI);
 }
