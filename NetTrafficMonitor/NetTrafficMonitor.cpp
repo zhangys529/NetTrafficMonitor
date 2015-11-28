@@ -39,7 +39,7 @@ BOOL CNetTrafficMonitorApp::InitInstance()
 	CWinApp::InitInstance();
 
 	m_pMainWnd = new CNetTrafficMonitorDlg();
-	m_pMainWnd->CreateEx(0, _T("CNetTrafficMonitorDlg"), _T(""), WS_POPUPWINDOW | WS_THICKFRAME,
+	m_pMainWnd->CreateEx(0, _T("CNetTrafficMonitorDlg"), _T("NetTrafficMonitor"), WS_POPUPWINDOW | WS_THICKFRAME,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL);
 
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
