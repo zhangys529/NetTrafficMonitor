@@ -19,6 +19,7 @@ CNetTrafficMonitorDlg::CNetTrafficMonitorDlg()
 	m_dwUploadTraffic = 0;
 	m_dwDownloadTraffic = 0;
 	m_bSelfStarting = FALSE;
+	m_bTopMost = TRUE;
 }
 
 CNetTrafficMonitorDlg::~CNetTrafficMonitorDlg()
@@ -40,6 +41,7 @@ BEGIN_MESSAGE_MAP(CNetTrafficMonitorDlg, CWnd)
 	ON_WM_KILLFOCUS()
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDC_SELFSTARTING, OnSelfStarting)
+	ON_BN_CLICKED(IDC_TOPMOST, OnTopMost)
 	ON_BN_CLICKED(IDC_TRANSPARENCY, OnTransparency)
 	ON_BN_CLICKED(IDC_EXIT, OnExit)
 END_MESSAGE_MAP()
@@ -285,6 +287,7 @@ void CNetTrafficMonitorDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	CMenu menu;
 	menu.CreatePopupMenu();	// 声明一个弹出式菜单
 	menu.AppendMenu(MF_STRING, IDC_SELFSTARTING, _T("开机启动"));
+	menu.AppendMenu(MF_STRING, IDC_TOPMOST, _T("置顶"));
 	CString strText;
 	strText.Format(_T("透明度: %d%%"), m_iTransparency);
 	menu.AppendMenu(MF_STRING, IDC_TRANSPARENCY, strText);
@@ -296,6 +299,14 @@ void CNetTrafficMonitorDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	else
 	{
 		menu.SetMenuItemBitmaps(IDC_SELFSTARTING, MF_BYCOMMAND | MF_STRING | MF_ENABLED, &m_cCheckNo, &m_cCheckNo);
+	}
+	if (m_bTopMost)
+	{
+		menu.SetMenuItemBitmaps(IDC_TOPMOST, MF_BYCOMMAND | MF_STRING | MF_ENABLED, &m_cCheckYes, &m_cCheckYes);
+	}
+	else
+	{
+		menu.SetMenuItemBitmaps(IDC_TOPMOST, MF_BYCOMMAND | MF_STRING | MF_ENABLED, &m_cCheckNo, &m_cCheckNo);
 	}
 	menu.SetMenuItemBitmaps(IDC_EXIT, MF_BYCOMMAND | MF_STRING | MF_ENABLED, &m_cExit, &m_cExit);
 	//SetForegroundWindow();
@@ -392,6 +403,21 @@ void CNetTrafficMonitorDlg::OnSelfStarting()
 		}
 	}
 	RegCloseKey(hKey);															// 关闭注册表
+}
+
+
+void CNetTrafficMonitorDlg::OnTopMost()
+{
+	if (m_bTopMost)
+	{
+		SetWindowPos(&wndNoTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);			// 取消置顶
+		m_bTopMost = FALSE;
+	}
+	else
+	{
+		SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);				// 置顶
+		m_bTopMost = TRUE;
+	}
 }
 
 

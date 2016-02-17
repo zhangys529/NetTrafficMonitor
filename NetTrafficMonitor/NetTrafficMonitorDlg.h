@@ -28,6 +28,7 @@ protected:
 	afx_msg void OnKillFocus(CWnd* pNewWnd);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnSelfStarting();
+	afx_msg void OnTopMost();
 	afx_msg void OnTransparency();
 	afx_msg void OnExit();
 
@@ -40,6 +41,7 @@ private:
 	DWORD m_dwDownloadTraffic;
 
 	BOOL m_bSelfStarting;
+	BOOL m_bTopMost;
 
 	CSliderCtrl* m_pSlider;
 	CToolTipCtrl m_cToolTip;
