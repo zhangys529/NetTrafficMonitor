@@ -38,9 +38,17 @@ BOOL CNetTrafficMonitorApp::InitInstance()
 {
 	CWinApp::InitInstance();
 
+	HWND hShellTrayWnd = ::FindWindow(_T("Shell_TrayWnd"), NULL);
+	HWND hTrayNotifyWnd = ::FindWindowEx(hShellTrayWnd, NULL, _T("TrayNotifyWnd"), NULL);
+
+	RECT rcTrayNotify;
+	::GetWindowRect(hTrayNotifyWnd, &rcTrayNotify);
+
+	int nWidth = 80;
 	m_pMainWnd = new CNetTrafficMonitorDlg();
-	m_pMainWnd->CreateEx(0, _T("CNetTrafficMonitorDlg"), _T("NetTrafficMonitor"), WS_POPUPWINDOW | WS_THICKFRAME,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL);
+	m_pMainWnd->CreateEx(0, AfxRegisterWndClass(CS_VREDRAW | CS_HREDRAW | CS_DBLCLKS),
+		_T("NetTrafficMonitor"), WS_CHILDWINDOW | WS_VISIBLE,
+		rcTrayNotify.right, 0, nWidth, rcTrayNotify.bottom - rcTrayNotify.top, hTrayNotifyWnd, NULL);
 
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
