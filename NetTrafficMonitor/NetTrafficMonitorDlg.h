@@ -9,6 +9,7 @@ class CNetTrafficMonitorDlg : public CWnd
 
 public:
 	CNetTrafficMonitorDlg();
+	CNetTrafficMonitorDlg(int nWidth);
 	virtual ~CNetTrafficMonitorDlg();
 
 public:
@@ -17,9 +18,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	afx_msg void OnPaint();
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 //	afx_msg void OnMove(int x, int y);
-//	afx_msg void OnSize(UINT nType, int cx, int cy);
 //	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 //	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 //	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
@@ -32,18 +32,15 @@ protected:
 	afx_msg void OnExit();
 
 private:
-//	int m_nWidth;
-//	int m_iHeight;
-//	int m_iTransparency;
-
-//	DWORD m_dwUploadTraffic;
-//	DWORD m_dwDownloadTraffic;
+	int m_nWidth;
 
 	BOOL m_bSelfStarting;
-//	BOOL m_bTopMost;
 
 //	CSliderCtrl* m_pSlider;
 //	CToolTipCtrl m_cToolTip;
+	CStatic* m_pUploadStatic;
+	CStatic* m_pDownloadStatic;
+	CFont* m_pFont;
 
 	CBitmap m_cCheckNo;
 	CBitmap m_cCheckYes;

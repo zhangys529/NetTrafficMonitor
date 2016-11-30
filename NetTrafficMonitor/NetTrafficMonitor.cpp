@@ -39,16 +39,27 @@ BOOL CNetTrafficMonitorApp::InitInstance()
 	CWinApp::InitInstance();
 
 	HWND hShellTrayWnd = ::FindWindow(_T("Shell_TrayWnd"), NULL);
-	HWND hTrayNotifyWnd = ::FindWindowEx(hShellTrayWnd, NULL, _T("TrayNotifyWnd"), NULL);
-
-	RECT rcTrayNotify;
-	::GetWindowRect(hTrayNotifyWnd, &rcTrayNotify);
+	HWND hReBarWnd = ::FindWindowEx(hShellTrayWnd, NULL, _T("ReBarWindow32"), NULL);
+	HWND hTaskWnd = ::FindWindowEx(hReBarWnd, NULL, _T("MSTaskSwWClass"), NULL);
+	HWND hCiceroUIWnd = ::FindWindowEx(hReBarWnd, NULL, _T("CiceroUIWndFrame"), NULL);
 
 	int nWidth = 80;
-	m_pMainWnd = new CNetTrafficMonitorDlg();
+	RECT rcReBar;
+	::GetClientRect(hReBarWnd, &rcReBar);
+	RECT rcTask;
+	::GetClientRect(hTaskWnd, &rcTask);
+	RECT rcCiceroUI;
+	::GetClientRect(hCiceroUIWnd, &rcCiceroUI);
+	if (rcTask.right + rcCiceroUI.right >= rcReBar.right - 8 &&
+		rcTask.right + rcCiceroUI.right <= rcReBar.right + 8)
+	{
+		::MoveWindow(hTaskWnd, 0, 0, rcTask.right - nWidth, rcTask.bottom, TRUE);
+	}
+
+	m_pMainWnd = new CNetTrafficMonitorDlg(nWidth);
 	m_pMainWnd->CreateEx(0, AfxRegisterWndClass(CS_VREDRAW | CS_HREDRAW | CS_DBLCLKS),
-		_T("NetTrafficMonitor"), WS_CHILDWINDOW | WS_VISIBLE,
-		rcTrayNotify.right, 0, nWidth, rcTrayNotify.bottom - rcTrayNotify.top, hTrayNotifyWnd, NULL);
+		_T("NetTrafficMonitor"), WS_CHILDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+		rcTask.right - nWidth, 0, nWidth, rcReBar.bottom, hReBarWnd, NULL);
 
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。

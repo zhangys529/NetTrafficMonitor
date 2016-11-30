@@ -13,13 +13,14 @@ IMPLEMENT_DYNAMIC(CNetTrafficMonitorDlg, CWnd)
 
 CNetTrafficMonitorDlg::CNetTrafficMonitorDlg()
 {
-	//m_nWidth = 80;
-	//m_iHeight = 30;
-	//m_iTransparency = 60;
-	//  m_dwUploadTraffic = 0;
-	//  m_dwDownloadTraffic = 0;
+	m_nWidth = 0;
 	m_bSelfStarting = FALSE;
-	//m_bTopMost = TRUE;
+}
+
+CNetTrafficMonitorDlg::CNetTrafficMonitorDlg(int nWidth)
+{
+	m_nWidth = nWidth;
+	m_bSelfStarting = FALSE;
 }
 
 CNetTrafficMonitorDlg::~CNetTrafficMonitorDlg()
@@ -30,9 +31,8 @@ CNetTrafficMonitorDlg::~CNetTrafficMonitorDlg()
 BEGIN_MESSAGE_MAP(CNetTrafficMonitorDlg, CWnd)
 	ON_WM_CREATE()
 	ON_WM_TIMER()
-	ON_WM_PAINT()
+	ON_WM_CTLCOLOR()
 //	ON_WM_MOVE()
-//	ON_WM_SIZE()
 //	ON_WM_GETMINMAXINFO()
 //	ON_WM_LBUTTONDOWN()
 //	ON_WM_LBUTTONDBLCLK()
@@ -104,6 +104,7 @@ int CNetTrafficMonitorDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//	GetWindowLong(m_hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);					// 为窗口加入WS_EX_LAYERED扩展属性
 	//SetLayeredWindowAttributes(0, (255 * m_iTransparency) / 100, LWA_ALPHA);	// m_iTransparency%透明度
 	SetTimer(TIMER_TRAFFIC, 1000, NULL);										// 间隔1000ms刷新
+	SetTimer(1, 10, NULL);
 	//ShowWindow(SW_SHOW);
 
 	TCHAR szFileFullPath[MAX_PATH] = { 0 };
@@ -135,6 +136,25 @@ int CNetTrafficMonitorDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//m_pSlider->ShowWindow(SW_HIDE);
 	//m_cToolTip.Create(m_pSlider);
 	//m_cToolTip.AddTool(m_pSlider);
+	RECT rc;
+	GetClientRect(&rc);
+	m_pFont = new CFont();
+	m_pFont->CreateFont(15, 0, 0, 0, 800,
+		false, false, false,
+		GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_SCRIPT,
+		_T("微软雅黑"));
+	CStatic* pStatic1 = new CStatic();
+	pStatic1->Create(_T("↑"), WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, CRect(0, 0, 10, rc.bottom / 2), this);
+	pStatic1->SetFont(m_pFont);
+	CStatic* pStatic2 = new CStatic();
+	pStatic2->Create(_T("↓"), WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, CRect(0, rc.bottom / 2, 10, rc.bottom), this);
+	pStatic2->SetFont(m_pFont);
+	m_pUploadStatic = new CStatic();
+	m_pUploadStatic->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_CENTERIMAGE, CRect(10, 0, rc.right, rc.bottom / 2), this);
+	m_pUploadStatic->SetFont(m_pFont);
+	m_pDownloadStatic = new CStatic();
+	m_pDownloadStatic->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_CENTERIMAGE, CRect(10, rc.bottom / 2, rc.right, rc.bottom), this);
+	m_pDownloadStatic->SetFont(m_pFont);
 
 	m_cCheckNo.LoadBitmap(IDB_CHECKNO);
 	m_cCheckYes.LoadBitmap(IDB_CHECKYES);
@@ -149,67 +169,82 @@ void CNetTrafficMonitorDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 	if (TIMER_TRAFFIC == nIDEvent)
 	{
-		Invalidate();
+		CNetTraffic* pNetTraffic = CNetTraffic::create_instance();
+		pNetTraffic->RefreshInterfacesTraffic();
+
+		DWORD dwUploadTraffic = 0;
+		DWORD dwDownloadTraffic = 0;
+		int iNetworkInterfacesCount = pNetTraffic->GetNetworkInterfacesCount();
+		for (int i = 0; i < iNetworkInterfacesCount; ++i)
+		{
+			dwUploadTraffic += pNetTraffic->GetIncrementalOutgoingTraffic(i);
+		}
+		for (int i = 0; i < iNetworkInterfacesCount; ++i)
+		{
+			dwDownloadTraffic += pNetTraffic->GetIncrementalIncomingTraffic(i);
+		}
+
+		CString strUploadText;
+		if (dwUploadTraffic / (1024 * 1024) >= 1)
+		{
+			strUploadText.Format(_T("%.2f MB/s "), dwUploadTraffic / (1024 * 1024.00));
+		}
+		else
+		{
+			strUploadText.Format(_T("%.2f KB/s "), dwUploadTraffic / 1024.00);
+		}
+		CString strDownloadText;
+		if (dwDownloadTraffic / (1024 * 1024) >= 1)
+		{
+			strDownloadText.Format(_T("%.2f MB/s "), dwDownloadTraffic / (1024 * 1024.00));
+		}
+		else
+		{
+			strDownloadText.Format(_T("%.2f KB/s "), dwDownloadTraffic / 1024.00);
+		}
+
+		m_pUploadStatic->SetWindowText(strUploadText);
+		m_pDownloadStatic->SetWindowText(strDownloadText);
+	}
+	if (nIDEvent == 1)
+	{
+		HWND hShellTrayWnd = ::FindWindow(_T("Shell_TrayWnd"), NULL);
+		HWND hReBarWnd = ::FindWindowEx(hShellTrayWnd, NULL, _T("ReBarWindow32"), NULL);
+		HWND hTaskWnd = ::FindWindowEx(hReBarWnd, NULL, _T("MSTaskSwWClass"), NULL);
+		HWND hCiceroUIWnd = ::FindWindowEx(hReBarWnd, NULL, _T("CiceroUIWndFrame"), NULL);
+
+		RECT rcReBar;
+		::GetClientRect(hReBarWnd, &rcReBar);
+		RECT rcTask;
+		::GetClientRect(hTaskWnd, &rcTask);
+		RECT rcCiceroUI;
+		::GetClientRect(hCiceroUIWnd, &rcCiceroUI);
+		if (rcTask.right + rcCiceroUI.right >= rcReBar.right - 8 &&
+			rcTask.right + rcCiceroUI.right <= rcReBar.right + 8)
+		{
+			::MoveWindow(hTaskWnd, 0, 0, rcTask.right - m_nWidth, rcTask.bottom, TRUE);
+			MoveWindow(rcTask.right - m_nWidth, 0, m_nWidth, rcReBar.bottom, TRUE);
+		}
 	}
 
 	CWnd::OnTimer(nIDEvent);
 }
 
 
-void CNetTrafficMonitorDlg::OnPaint()
+HBRUSH CNetTrafficMonitorDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
-	CPaintDC dc(this); // device context for painting
-	// TODO:  在此处添加消息处理程序代码
-	// 不为绘图消息调用 CWnd::OnPaint()
-	CFont font;
-	font.CreateFont(15, 0, 0, 0, 800,
-		false, false, false,
-		GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_SCRIPT,
-		_T("微软雅黑"));
-	dc.SelectObject(&font);
-	dc.SetTextColor(RGB(255, 255, 255));
-	dc.SetBkColor(RGB(0, 0, 0));
+	HBRUSH hbr = CWnd::OnCtlColor(pDC, pWnd, nCtlColor);
 
-	CNetTraffic* pNetTraffic = CNetTraffic::create_instance();
-	pNetTraffic->RefreshInterfacesTraffic();
-
-	DWORD dwUploadTraffic = 0;
-	DWORD dwDownloadTraffic = 0;
-	int iNetworkInterfacesCount = pNetTraffic->GetNetworkInterfacesCount();
-	for (int i = 0; i < iNetworkInterfacesCount; ++i)
+	// TODO:  在此更改 DC 的任何特性
+	if (nCtlColor == CTLCOLOR_STATIC)
 	{
-		dwUploadTraffic += pNetTraffic->GetIncrementalOutgoingTraffic(i);
-	}
-	for (int i = 0; i < iNetworkInterfacesCount; ++i)
-	{
-		dwDownloadTraffic += pNetTraffic->GetIncrementalIncomingTraffic(i);
+		pDC->SetBkMode(TRANSPARENT);
+		pDC->SetTextColor(RGB(255, 255, 255));
+		return  HBRUSH(GetStockObject(BLACK_BRUSH));
 	}
 
-	CString strUploadText;
-	if (dwUploadTraffic / (1024 * 1024) >= 1)
-	{
-		strUploadText.Format(_T("%.2f MB/s "), dwUploadTraffic / (1024 * 1024.00));
-	}
-	else
-	{
-		strUploadText.Format(_T("%.2f KB/s "), dwUploadTraffic / 1024.00);
-	}
-	CString strDownloadText;
-	if (dwDownloadTraffic / (1024 * 1024) >= 1)
-	{
-		strDownloadText.Format(_T("%.2f MB/s "), dwDownloadTraffic / (1024 * 1024.00));
-	}
-	else
-	{
-		strDownloadText.Format(_T("%.2f KB/s "), dwDownloadTraffic / 1024.00);
-	}
-
-	RECT rc;
-	GetClientRect(&rc);
-	dc.DrawText(_T("↑"), CRect(0, 0, 10, rc.bottom / 2), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	dc.DrawText(_T("↓"), CRect(0, rc.bottom / 2, 10, rc.bottom), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	dc.DrawText(strUploadText, CRect(10, 0, rc.right, rc.bottom / 2), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	dc.DrawText(strDownloadText, CRect(10, rc.bottom / 2, rc.right, rc.bottom), DT_RIGHT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+	// TODO:  如果默认的不是所需画笔，则返回另一个画笔
+	return hbr;
 }
 
 
@@ -243,14 +278,6 @@ void CNetTrafficMonitorDlg::OnPaint()
 //		rc.bottom = rcWorkArea.bottom;
 //	}
 //	MoveWindow(&rc);
-//}
-
-
-//void CNetTrafficMonitorDlg::OnSize(UINT nType, int cx, int cy)
-//{
-//	CWnd::OnSize(nType, cx, cy);
-//
-//	// TODO:  在此处添加消息处理程序代码
 //}
 
 
@@ -330,7 +357,7 @@ void CNetTrafficMonitorDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	menu.DestroyMenu();
 	delete lpPoint;
 
-	CWnd::OnRButtonUp(nFlags, point);
+	//CWnd::OnRButtonUp(nFlags, point);	// 屏蔽任务栏自己的右键菜单
 }
 
 
@@ -422,5 +449,22 @@ void CNetTrafficMonitorDlg::OnExit()
 {
 	//m_pSlider->DestroyWindow();
 	//m_cToolTip.DestroyWindow();
+	HWND hShellTrayWnd = ::FindWindow(_T("Shell_TrayWnd"), NULL);
+	HWND hReBarWnd = ::FindWindowEx(hShellTrayWnd, NULL, _T("ReBarWindow32"), NULL);
+	HWND hTaskWnd = ::FindWindowEx(hReBarWnd, NULL, _T("MSTaskSwWClass"), NULL);
+	HWND hCiceroUIWnd = ::FindWindowEx(hReBarWnd, NULL, _T("CiceroUIWndFrame"), NULL);
+
+	RECT rcReBar;
+	::GetClientRect(hReBarWnd, &rcReBar);
+	RECT rcTask;
+	::GetClientRect(hTaskWnd, &rcTask);
+	RECT rcCiceroUI;
+	::GetClientRect(hCiceroUIWnd, &rcCiceroUI);
+	if (rcTask.right + rcCiceroUI.right < rcReBar.right - 8 ||
+		rcTask.right + rcCiceroUI.right > rcReBar.right + 8)
+	{
+		::MoveWindow(hTaskWnd, 0, 0, rcTask.right + m_nWidth, rcTask.bottom, TRUE);
+	}
+
 	DestroyWindow();
 }
