@@ -143,12 +143,12 @@ int CNetTrafficMonitorDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		false, false, false,
 		GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_SCRIPT,
 		_T("Î¢ÈíÑÅºÚ"));
-	CStatic* pStatic1 = new CStatic();
-	pStatic1->Create(_T("¡ü"), WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, CRect(0, 0, 10, rc.bottom / 2), this);
-	pStatic1->SetFont(m_pFont);
-	CStatic* pStatic2 = new CStatic();
-	pStatic2->Create(_T("¡ý"), WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, CRect(0, rc.bottom / 2, 10, rc.bottom), this);
-	pStatic2->SetFont(m_pFont);
+	m_pStatic1 = new CStatic();
+	m_pStatic1->Create(_T("¡ü"), WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, CRect(0, 0, 10, rc.bottom / 2), this);
+	m_pStatic1->SetFont(m_pFont);
+	m_pStatic2 = new CStatic();
+	m_pStatic2->Create(_T("¡ý"), WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, CRect(0, rc.bottom / 2, 10, rc.bottom), this);
+	m_pStatic2->SetFont(m_pFont);
 	m_pUploadStatic = new CStatic();
 	m_pUploadStatic->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_CENTERIMAGE, CRect(10, 0, rc.right, rc.bottom / 2), this);
 	m_pUploadStatic->SetFont(m_pFont);
@@ -225,6 +225,13 @@ void CNetTrafficMonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			::MoveWindow(hTaskWnd, 0, 0, rcTask.right - m_nWidth, rcTask.bottom, TRUE);
 			MoveWindow(rcTask.right - m_nWidth, 0, m_nWidth, rcReBar.bottom, TRUE);
 		}
+
+		RECT rc;
+		GetClientRect(&rc);
+		m_pStatic1->MoveWindow(CRect(0, 0, 10, rc.bottom / 2), TRUE);
+		m_pStatic2->MoveWindow(CRect(0, rc.bottom / 2, 10, rc.bottom), TRUE);
+		m_pUploadStatic->MoveWindow(CRect(10, 0, rc.right, rc.bottom / 2), TRUE);
+		m_pDownloadStatic->MoveWindow(CRect(10, rc.bottom / 2, rc.right, rc.bottom), TRUE);
 	}
 
 	CWnd::OnTimer(nIDEvent);

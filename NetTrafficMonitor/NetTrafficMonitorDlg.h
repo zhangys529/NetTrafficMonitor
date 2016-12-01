@@ -38,6 +38,8 @@ private:
 
 //	CSliderCtrl* m_pSlider;
 //	CToolTipCtrl m_cToolTip;
+	CStatic* m_pStatic1;
+	CStatic* m_pStatic2;
 	CStatic* m_pUploadStatic;
 	CStatic* m_pDownloadStatic;
 	CFont* m_pFont;
